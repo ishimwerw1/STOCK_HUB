@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -8,20 +9,21 @@ const links = [
   { to: '/reports', label: 'Reports', icon: '📈' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     navigate('/');
+    if (onClose) onClose();
   };
 
-  return (
-    <aside className="w-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen flex flex-col shadow-2xl sidebar">
+  const sidebarContent = (
+    <div className="h-full flex flex-col">
       <div className="p-5 border-b border-slate-700/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg shadow-lg animate-pulse-glow">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg shadow-lg animate-pulse-glow shrink-0">
             📦
           </div>
           <div>
@@ -32,23 +34,28 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 p-3 space-y-1 mt-2">
-        {links.map((link, i) => (
+        {links.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
+            end={link.to === '/dashboard'}
+            onClick={() => { if (onClose) onClose(); }}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-300 ${
+              `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-300 group ${
                 isActive
                   ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white shadow-lg shadow-blue-600/20 scale-[1.02]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-1'
               }`
             }
-            style={{ animationDelay: `${i * 0.05}s` }}
           >
-            <span className="text-lg">{link.icon}</span>
-            <span className="font-medium">{link.label}</span>
-            {({ isActive }) => isActive && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            {({ isActive }) => (
+              <>
+                <span className={`text-lg transition-transform duration-300 ${!isActive && 'group-hover:scale-110'}`}>{link.icon}</span>
+                <span className="font-medium">{link.label}</span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                )}
+              </>
             )}
           </NavLink>
         ))}
@@ -67,6 +74,32 @@ export default function Sidebar() {
           <span>Logout</span>
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen flex-col shadow-2xl sidebar shrink-0">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden animate-fade-in"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Mobile sidebar drawer */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl lg:hidden transition-transform duration-300 ease-out ${
+          open ? 'translate-x-0 animate-slide-in-left' : '-translate-x-full'
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
